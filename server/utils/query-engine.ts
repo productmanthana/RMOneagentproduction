@@ -7319,6 +7319,10 @@ export class QueryEngine {
               type: "string",
               description: "Size category: 'Micro', 'Small', 'Medium', 'Large', or 'Mega'",
             },
+            limit: {
+              type: "integer",
+              description: "Maximum number of results. Extract from queries like '5 small projects', 'show 10 large projects'. The number indicates how many projects to return.",
+            },
           },
           required: ["size"],
         },
@@ -19099,7 +19103,9 @@ Response (JSON only):`;
       const hasSingleRequest = /\b(single|one\s+project|1\s+project|the\s+largest|the\s+biggest|the\s+smallest|the\s+highest|the\s+lowest|the\s+best|the\s+worst)\b/i.test(userQuestion);
       
       const hasNumberBeforeSize = /\b(\d+)\s+(smallest|largest|biggest|lowest|highest|cheapest|top|bottom)\b/i.test(userQuestion);
-      const hasExplicitLimit = hasExplicitNumericLimit || hasOrdinalRequest || hasSingleRequest || hasNumberBeforeSize;
+      // Also match "5 small projects", "10 large projects" (fee category with limit)
+      const hasNumberBeforeCategory = /\b(\d+)\s+(small|medium|large|tiny|huge|mega|micro)\s+(project|projects)\b/i.test(userQuestion);
+      const hasExplicitLimit = hasExplicitNumericLimit || hasOrdinalRequest || hasSingleRequest || hasNumberBeforeSize || hasNumberBeforeCategory;
       
       if (!hasExplicitLimit) {
         console.log(`[Limit Guard] Removing limit=${args.limit} - no explicit limit requested in: "${userQuestion}"`);
