@@ -6346,7 +6346,7 @@ export class QueryEngine {
         parameters: {
           type: "object",
           properties: {
-            limit: { type: "integer", description: "Number of results (use 1 for single project queries)" },
+            limit: { type: "integer", description: "ALWAYS extract the number when user specifies count like 'top 5', 'largest 3', 'biggest 10 won projects', 'largest active 5'. Examples: 'top 5' → limit=5, 'largest 3' → limit=3, 'largest won 5' → limit=5. Use 1 for singular queries like 'the largest'." },
             offset: { type: "integer", description: "Number of results to skip. For ordinal queries: 'second'=1, 'third'=2, 'fourth'=3, etc." },
             time_reference: { type: "string" },
             category: { type: "string", description: "Request Category filter (e.g., 'Aviation', 'Healthcare', 'Transportation')" },
@@ -6369,11 +6369,11 @@ export class QueryEngine {
 
       {
         name: "get_smallest_projects",
-        description: "Get smallest/lowest/bottom/cheapest projects by fee. Use for queries like 'bottom projects', 'smallest fee', 'lowest value', 'cheapest projects', 'least expensive'. ORDINAL SUPPORT: For 'second smallest', 'third cheapest', etc., set limit=1 and offset=(N-1).",
+        description: "Get smallest/lowest/bottom/cheapest projects by fee. LIMIT EXTRACTION: When user specifies a number like 'smallest 3 projects', 'bottom 5', 'smallest active 3 projects', 'cheapest 10 won projects', ALWAYS extract that number as limit parameter. Examples: 'smallest 3' → limit=3, 'bottom 5 active' → limit=5, 'smallest active 3' → limit=3. ORDINAL SUPPORT: For 'second smallest', 'third cheapest', set limit=1 and offset=(N-1).",
         parameters: {
           type: "object",
           properties: {
-            limit: { type: "integer", description: "Number of results (use 1 for single project queries)" },
+            limit: { type: "integer", description: "ALWAYS extract the number when user specifies count like 'top 5', 'largest 3', 'biggest 10 won projects', 'largest active 5'. Examples: 'top 5' → limit=5, 'largest 3' → limit=3, 'largest won 5' → limit=5. Use 1 for singular queries like 'the largest'." },
             offset: { type: "integer", description: "Number of results to skip. For ordinal queries: 'second'=1, 'third'=2, 'fourth'=3, etc." },
             time_reference: { type: "string" },
           },
@@ -6388,7 +6388,7 @@ export class QueryEngine {
           type: "object",
           properties: {
             state_code: { type: "string" },
-            limit: { type: "integer", description: "Number of results (use 1 for single project queries)" },
+            limit: { type: "integer", description: "ALWAYS extract the number when user specifies count like 'top 5', 'largest 3', 'biggest 10 won projects', 'largest active 5'. Examples: 'top 5' → limit=5, 'largest 3' → limit=3, 'largest won 5' → limit=5. Use 1 for singular queries like 'the largest'." },
             offset: { type: "integer", description: "Number of results to skip. For ordinal queries: 'second'=1, 'third'=2, etc." },
           },
           required: ["state_code"],
@@ -6403,7 +6403,7 @@ export class QueryEngine {
           type: "object",
           properties: {
             category: { type: "string" },
-            limit: { type: "integer", description: "Number of results (use 1 for single project queries)" },
+            limit: { type: "integer", description: "ALWAYS extract the number when user specifies count like 'top 5', 'largest 3', 'biggest 10 won projects', 'largest active 5'. Examples: 'top 5' → limit=5, 'largest 3' → limit=3, 'largest won 5' → limit=5. Use 1 for singular queries like 'the largest'." },
             offset: { type: "integer", description: "Number of results to skip. For ordinal queries: 'second'=1, 'third'=2, etc." },
           },
           required: ["category"],
@@ -13864,6 +13864,23 @@ If a hint conflicts with your understanding, trust the hint - they are reliable.
         classification.function_name = "get_largest_projects";
         classification.arguments.limit = extractedLimit;
       }
+
+      // FALLBACK: If function is smallest/largest but no limit was extracted,
+      // try to extract any number from the query
+      if ((classification.function_name === "get_smallest_projects" || 
+           classification.function_name === "get_largest_projects") &&
+          !classification.arguments.limit) {
+        // Look for any standalone number in the query
+        const numberMatch = /\b(\d+)\b/.exec(userQuestion);
+        if (numberMatch) {
+          const extractedLimit = parseInt(numberMatch[1], 10);
+          // Only use if it's a reasonable limit (1-1000)
+          if (extractedLimit >= 1 && extractedLimit <= 1000) {
+            console.log(`[QueryEngine] 🔢 FALLBACK LIMIT DETECTION: "${userQuestion}" → limit=${extractedLimit}`);
+            classification.arguments.limit = extractedLimit;
+          }
+        }
+      }
       // BOTTOM X / TOP X FOLLOW-UP CORRECTION
       // When user asks "bottom 3" or "top 5" as a follow-up, they want:
       // - Same query type as previous
@@ -19081,7 +19098,8 @@ Response (JSON only):`;
       const hasOrdinalRequest = /\b(second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|\d+(st|nd|rd|th))\s+(largest|biggest|smallest|best|worst|highest|lowest)/i.test(userQuestion);
       const hasSingleRequest = /\b(single|one\s+project|1\s+project|the\s+largest|the\s+biggest|the\s+smallest|the\s+highest|the\s+lowest|the\s+best|the\s+worst)\b/i.test(userQuestion);
       
-      const hasExplicitLimit = hasExplicitNumericLimit || hasOrdinalRequest || hasSingleRequest;
+      const hasNumberBeforeSize = /\b(\d+)\s+(smallest|largest|biggest|lowest|highest|cheapest|top|bottom)\b/i.test(userQuestion);
+      const hasExplicitLimit = hasExplicitNumericLimit || hasOrdinalRequest || hasSingleRequest || hasNumberBeforeSize;
       
       if (!hasExplicitLimit) {
         console.log(`[Limit Guard] Removing limit=${args.limit} - no explicit limit requested in: "${userQuestion}"`);
