@@ -1,0 +1,85 @@
+# RMDB - AI-Powered Project Query System
+
+## Overview
+
+RMDB is an AI-powered natural language query interface for project management data. Users ask questions in plain English about projects, clients, budgets, win rates, and more. The system translates these questions into SQL queries, executes them against a database, and provides both raw data and AI-generated analysis.
+
+The application uses a React frontend with a chat-based interface and an Express backend that integrates Azure OpenAI for natural language processing, Pinecone for RAG (Retrieval-Augmented Generation), and MS SQL Server as the primary data source.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React with TypeScript
+- **Build Tool**: Vite with hot module replacement
+- **UI Components**: shadcn/ui component library built on Radix UI primitives
+- **Styling**: Tailwind CSS with custom design tokens and CSS variables
+- **State Management**: TanStack React Query for server state
+- **Routing**: Client-side routing with chat-based interface
+- **Path Aliases**: `@/` maps to `client/src/`, `@shared/` maps to `shared/`
+
+### Backend Architecture
+- **Runtime**: Node.js with Express
+- **Language**: TypeScript with ES modules
+- **API Pattern**: RESTful endpoints under `/api/`
+- **Authentication**: Session-based auth with passport (Replit OIDC integration available)
+- **Session Storage**: PostgreSQL-backed sessions via connect-pg-simple
+
+### Query Processing Pipeline
+1. User submits natural language question
+2. RAG system retrieves relevant context from Pinecone vector store
+3. QueryEngine classifies the question type and extracts parameters
+4. AI generates appropriate SQL query for MS SQL Server
+5. Query executes against external database
+6. Results return with optional AI-generated analysis
+
+### Database Architecture
+- **Primary Data Source**: MS SQL Server (`CLIENT_MSSQL_URL`) - stores project/client data in configurable table (default: POR)
+- **Application Data**: Can use either MS SQL (`APP_MSSQL_URL`) or PostgreSQL (`AURORA_DATABASE_URL` / `DATABASE_URL`)
+- **ORM**: Drizzle ORM for PostgreSQL operations
+- **Schema Location**: `shared/schema.ts`
+- **Migrations**: Drizzle Kit with output to `./migrations`
+
+### AI Integration
+- **LLM Provider**: Azure OpenAI (GPT-4 for query classification and analysis)
+- **Embeddings**: OpenAI text-embedding-3-large model
+- **Vector Store**: Pinecone for RAG context retrieval
+- **Request Handling**: Queue-based rate limiting for OpenAI API calls
+
+### Storage Abstraction
+- **Unified Storage**: `server/unified-storage.ts` provides abstraction layer
+- **Supports**: Both MS SQL and PostgreSQL backends
+- **Entities**: Users, sessions, chats, messages, error logs, FAQ samples
+
+## External Dependencies
+
+### AI/ML Services
+- **Azure OpenAI**: Natural language processing, query classification, analysis generation
+- **OpenAI API**: Text embeddings for RAG system
+- **Pinecone**: Vector database for semantic search and context retrieval
+
+### Database Services
+- **MS SQL Server**: Primary data source for project data (required)
+- **PostgreSQL**: Application data storage - supports Neon serverless or Aurora
+- **Neon Serverless**: Optional PostgreSQL provider with WebSocket support
+
+### Environment Variables Required
+- `CLIENT_MSSQL_URL`: MS SQL connection for project data
+- `OPENAI_API_KEY`: OpenAI API access for embeddings
+- `PINECONE_API_KEY`: Pinecone vector store access
+- `DATABASE_URL` or `AURORA_DATABASE_URL`: PostgreSQL for app data
+- `SESSION_SECRET`: Session encryption key
+- `CLIENT_TABLE_NAME`: Optional, defaults to "POR"
+
+### NPM Dependencies (Key Packages)
+- `@neondatabase/serverless`: Serverless PostgreSQL driver
+- `@pinecone-database/pinecone`: Vector database client
+- `mssql`: MS SQL Server driver
+- `drizzle-orm` / `drizzle-kit`: PostgreSQL ORM and migrations
+- `express-session` / `connect-pg-simple`: Session management
+- `openid-client` / `passport`: Authentication
+- `@tanstack/react-query`: Data fetching and caching
+- `xlsx`: Excel file parsing for data import

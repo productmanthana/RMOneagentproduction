@@ -1,0 +1,128 @@
+[
+  {
+    "query": "DFW Airport projects",
+    "success": true,
+    "rowCount": 13,
+    "function_name": "get_projects_by_project_type"
+  },
+  {
+    "query": "DFW Airport open projects",
+    "success": true,
+    "rowCount": 13,
+    "function_name": "get_projects_by_client"
+  },
+  {
+    "query": "show Google projects",
+    "success": true,
+    "rowCount": 103,
+    "function_name": "get_projects_by_client"
+  },
+  {
+    "query": "Abu Dhabi Airports Company projects",
+    "success": false,
+    "rowCount": 0,
+    "function_name": "get_projects_by_client"
+  },
+  {
+    "query": "University Medical Center projects",
+    "success": true,
+    "rowCount": 108,
+    "function_name": "get_projects_by_project_type"
+  },
+  {
+    "query": "LiRo projects",
+    "success": true,
+    "rowCount": 3892,
+    "function_name": "get_projects_by_combined_filters"
+  },
+  {
+    "query": "Hill open projects",
+    "success": true,
+    "rowCount": 1217,
+    "function_name": "get_projects_by_combined_filters"
+  },
+  {
+    "query": "Gafcon projects this year",
+    "success": true,
+    "rowCount": 25,
+    "function_name": "get_projects_by_combined_filters"
+  },
+  {
+    "query": "Healthcare projects",
+    "success": true,
+    "rowCount": 428,
+    "function_name": "get_projects_by_project_type"
+  },
+  {
+    "query": "Transportation projects",
+    "success": true,
+    "rowCount": 976,
+    "function_name": "get_projects_by_category"
+  },
+  {
+    "query": "Education projects",
+    "success": true,
+    "rowCount": 153,
+    "function_name": "get_projects_by_category"
+  },
+  {
+    "query": "Texas projects",
+    "success": true,
+    "rowCount": 52,
+    "function_name": "get_projects_by_state"
+  },
+  {
+    "query": "California projects",
+    "success": true,
+    "rowCount": 459,
+    "function_name": "get_projects_by_state"
+  },
+  {
+    "query": "West region projects",
+    "success": false,
+    "rowCount": 0,
+    "function_name": "get_projects_by_state"
+  },
+  {
+    "query": "Amy Wincko projects",
+    "success": true,
+    "rowCount": 907,
+    "function_name": "get_projects_by_poc"
+  },
+  {
+    "query": "Alex Ramos won projects",
+    "success": false,
+    "rowCount": 0,
+    "function_name": "get_projects_by_poc"
+  },
+  {
+    "query": "Aviation projects",
+    "success": true,
+    "rowCount": 82,
+    "function_name": "get_projects_by_project_type"
+  },
+  {
+    "query": "Hospitals projects",
+    "success": true,
+    "rowCount": 428,
+    "function_name": "get_projects_by_project_type"
+  },
+  {
+    "query": "top 10 projects by fee",
+    "success": true,
+    "rowCount": 10,
+    "function_name": "get_largest_projects"
+  },
+  {
+    "query": "open projects this year",
+    "success": true,
+    "rowCount": 2449,
+    "function_name": "get_projects_by_status"
+  },
+  {
+    "query": "Won projects last year",
+    "success": false,
+    "rowCount": 0,
+    "function_name": "get_projects_by_status"
+  }
+]
