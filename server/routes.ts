@@ -1353,28 +1353,42 @@ Please provide a helpful analysis for the follow-up question.`,
           FROM "POR"
         `),
         
-        // Distribution by size
+        // Distribution by size - uses PERCENTILE_CONT for dynamic thresholds
         queryExternalDb(`
+          WITH Percentiles AS (
+            SELECT TOP 1
+              PERCENTILE_CONT(0.20) WITHIN GROUP (ORDER BY numeric_fee) OVER () as p20,
+              PERCENTILE_CONT(0.40) WITHIN GROUP (ORDER BY numeric_fee) OVER () as p40,
+              PERCENTILE_CONT(0.60) WITHIN GROUP (ORDER BY numeric_fee) OVER () as p60,
+              PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY numeric_fee) OVER () as p80
+            FROM (
+              SELECT TRY_CAST(Fee AS NUMERIC) as numeric_fee
+              FROM "POR"
+              WHERE Fee IS NOT NULL AND TRY_CAST(Fee AS NUMERIC) > 0
+            ) fee_data
+            WHERE numeric_fee IS NOT NULL
+          )
           SELECT 
             CASE 
-              WHEN CAST(NULLIF("Fee", '') AS NUMERIC) < 35000 THEN 'Micro'
-              WHEN CAST(NULLIF("Fee", '') AS NUMERIC) >= 35000 AND CAST(NULLIF("Fee", '') AS NUMERIC) < 90000 THEN 'Small'
-              WHEN CAST(NULLIF("Fee", '') AS NUMERIC) >= 90000 AND CAST(NULLIF("Fee", '') AS NUMERIC) < 250000 THEN 'Medium'
-              WHEN CAST(NULLIF("Fee", '') AS NUMERIC) >= 250000 AND CAST(NULLIF("Fee", '') AS NUMERIC) < 1319919 THEN 'Large'
+              WHEN CAST(NULLIF(d."Fee", '') AS NUMERIC) < p.p20 THEN 'Micro'
+              WHEN CAST(NULLIF(d."Fee", '') AS NUMERIC) >= p.p20 AND CAST(NULLIF(d."Fee", '') AS NUMERIC) < p.p40 THEN 'Small'
+              WHEN CAST(NULLIF(d."Fee", '') AS NUMERIC) >= p.p40 AND CAST(NULLIF(d."Fee", '') AS NUMERIC) < p.p60 THEN 'Medium'
+              WHEN CAST(NULLIF(d."Fee", '') AS NUMERIC) >= p.p60 AND CAST(NULLIF(d."Fee", '') AS NUMERIC) < p.p80 THEN 'Large'
               ELSE 'Mega'
             END as project_size,
             COUNT(*) as count,
-            COALESCE(SUM(CAST(NULLIF("Fee", '') AS NUMERIC)), 0) as total_value
-          FROM "POR"
-          WHERE "Fee" IS NOT NULL AND "Fee" != ''
+            COALESCE(SUM(CAST(NULLIF(d."Fee", '') AS NUMERIC)), 0) as total_value
+          FROM "POR" d
+          CROSS JOIN Percentiles p
+          WHERE d."Fee" IS NOT NULL AND d."Fee" != ''
           GROUP BY CASE 
-              WHEN CAST(NULLIF("Fee", '') AS NUMERIC) < 35000 THEN 'Micro'
-              WHEN CAST(NULLIF("Fee", '') AS NUMERIC) >= 35000 AND CAST(NULLIF("Fee", '') AS NUMERIC) < 90000 THEN 'Small'
-              WHEN CAST(NULLIF("Fee", '') AS NUMERIC) >= 90000 AND CAST(NULLIF("Fee", '') AS NUMERIC) < 250000 THEN 'Medium'
-              WHEN CAST(NULLIF("Fee", '') AS NUMERIC) >= 250000 AND CAST(NULLIF("Fee", '') AS NUMERIC) < 1319919 THEN 'Large'
+              WHEN CAST(NULLIF(d."Fee", '') AS NUMERIC) < p.p20 THEN 'Micro'
+              WHEN CAST(NULLIF(d."Fee", '') AS NUMERIC) >= p.p20 AND CAST(NULLIF(d."Fee", '') AS NUMERIC) < p.p40 THEN 'Small'
+              WHEN CAST(NULLIF(d."Fee", '') AS NUMERIC) >= p.p40 AND CAST(NULLIF(d."Fee", '') AS NUMERIC) < p.p60 THEN 'Medium'
+              WHEN CAST(NULLIF(d."Fee", '') AS NUMERIC) >= p.p60 AND CAST(NULLIF(d."Fee", '') AS NUMERIC) < p.p80 THEN 'Large'
               ELSE 'Mega'
             END
-          ORDER BY MIN(CAST(NULLIF("Fee", '') AS NUMERIC))
+          ORDER BY MIN(CAST(NULLIF(d."Fee", '') AS NUMERIC))
         `),
         
         // Distribution by status
