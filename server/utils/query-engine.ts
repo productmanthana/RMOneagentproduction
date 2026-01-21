@@ -541,6 +541,30 @@ function normalizeClassificationArguments(args: Record<string, any>, originalQue
     console.log(`[Normalize] number → limit: ${normalized.limit}`);
   }
   
+  // 7b. Extract numeric limit from question text if not already set
+  // Handles queries like "smallest 3 projects", "top 5 largest", "bottom 10"
+  if (!normalized.limit && originalQuestion) {
+    const limitPatterns = [
+      /\b(?:top|bottom|first|last|smallest|largest|biggest|cheapest)\s+(\d+)\b/i,
+      /\b(\d+)\s+(?:top|bottom|first|last|smallest|largest|biggest|cheapest)\b/i,
+      /\bshow\s+(?:me\s+)?(\d+)\b/i,
+      /\bget\s+(\d+)\b/i,
+      /\blist\s+(\d+)\b/i,
+    ];
+    
+    for (const pattern of limitPatterns) {
+      const match = originalQuestion.match(pattern);
+      if (match && match[1]) {
+        const extractedLimit = parseInt(match[1], 10);
+        if (extractedLimit > 0 && extractedLimit <= 1000) {
+          normalized.limit = extractedLimit;
+          console.log(`[Normalize] Extracted limit from question: "${originalQuestion}" → limit: ${extractedLimit}`);
+          break;
+        }
+      }
+    }
+  }
+  
   // 8. Project type normalization: project_types → project_type
   if (normalized.project_types && !normalized.project_type) {
     const typeValue = Array.isArray(normalized.project_types) 
