@@ -18,3 +18,9 @@ test-*.mjs
 # Development assets
 attached_assets/
 uploads/
+
+# Replit-specific files
+.replit
+.cache/replit/
+server/replitAuth.ts
+server/migrate-to-replit-db.ts
