@@ -13827,16 +13827,30 @@ If a hint conflicts with your understanding, trust the hint - they are reliable.
       // ═══════════════════════════════════════════════════════════════
       // SMALLEST/LARGEST N PROJECTS DETECTION (ALL QUERIES)
       // When user asks "smallest 3 projects" or "largest 5 projects"
+      // Also handles: "smallest active 3 projects", "largest won 5 projects"
       // route to get_smallest_projects / get_largest_projects
       // ═══════════════════════════════════════════════════════════════
+      // Pattern 1: "smallest 3 active projects" - number comes first
       const smallestLargestPattern = /\b(smallest|lowest|cheapest|least\s+expensive|bottom)\s+(\d+)\s+(project|projects|active|open|submitted|won|records?)/i;
       const topLargestPattern = /\b(largest|biggest|highest|most\s+expensive|top)\s+(\d+)\s+(project|projects|active|open|submitted|won|records?)/i;
+      
+      // Pattern 2: "smallest active 3 projects" - number comes after status word
+      const smallestAltPattern = /\b(smallest|lowest|cheapest|bottom)\s+(active|open|submitted|won|closed|lead|qualified|proposal|in\s+progress|hold)\s+(\d+)\s*(project|projects|records?)?/i;
+      const largestAltPattern = /\b(largest|biggest|highest|top)\s+(active|open|submitted|won|closed|lead|qualified|proposal|in\s+progress|hold)\s+(\d+)\s*(project|projects|records?)?/i;
+      
       const smallestMatch = smallestLargestPattern.exec(userQuestion);
       const topLargestMatch = topLargestPattern.exec(userQuestion);
+      const smallestAltMatch = smallestAltPattern.exec(userQuestion);
+      const largestAltMatch = largestAltPattern.exec(userQuestion);
       
       if (smallestMatch) {
         const extractedLimit = parseInt(smallestMatch[2], 10);
         console.log(`[QueryEngine] 🔢 SMALLEST N DETECTION: "${userQuestion}" → get_smallest_projects with limit=${extractedLimit}`);
+        classification.function_name = "get_smallest_projects";
+        classification.arguments.limit = extractedLimit;
+      } else if (smallestAltMatch) {
+        const extractedLimit = parseInt(smallestAltMatch[3], 10);
+        console.log(`[QueryEngine] 🔢 SMALLEST N ALT DETECTION: "${userQuestion}" → get_smallest_projects with limit=${extractedLimit}`);
         classification.function_name = "get_smallest_projects";
         classification.arguments.limit = extractedLimit;
       } else if (topLargestMatch) {
@@ -13844,9 +13858,12 @@ If a hint conflicts with your understanding, trust the hint - they are reliable.
         console.log(`[QueryEngine] 🔢 LARGEST N DETECTION: "${userQuestion}" → get_largest_projects with limit=${extractedLimit}`);
         classification.function_name = "get_largest_projects";
         classification.arguments.limit = extractedLimit;
+      } else if (largestAltMatch) {
+        const extractedLimit = parseInt(largestAltMatch[3], 10);
+        console.log(`[QueryEngine] 🔢 LARGEST N ALT DETECTION: "${userQuestion}" → get_largest_projects with limit=${extractedLimit}`);
+        classification.function_name = "get_largest_projects";
+        classification.arguments.limit = extractedLimit;
       }
-
-      // ═══════════════════════════════════════════════════════════════
       // BOTTOM X / TOP X FOLLOW-UP CORRECTION
       // When user asks "bottom 3" or "top 5" as a follow-up, they want:
       // - Same query type as previous
@@ -19060,7 +19077,7 @@ Response (JSON only):`;
     // Explicit limit patterns: "top 10", "first 5", "last 3", "bottom 5", "only 1", "single", "one project"
     // Also ordinals: "second largest", "third best", "5th biggest"
     if (args.limit) {
-      const hasExplicitNumericLimit = /\b(top|first|last|bottom|only|just|smallest|largest|biggest|lowest|highest|cheapest)\s+\d+\b/i.test(userQuestion);
+      const hasExplicitNumericLimit = /\b(top|first|last|bottom|only|just|smallest|largest|biggest|lowest|highest|cheapest)\s+(\d+|active|open|won|closed|submitted|lead|qualified)\s*(\d+)?\b/i.test(userQuestion);
       const hasOrdinalRequest = /\b(second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|\d+(st|nd|rd|th))\s+(largest|biggest|smallest|best|worst|highest|lowest)/i.test(userQuestion);
       const hasSingleRequest = /\b(single|one\s+project|1\s+project|the\s+largest|the\s+biggest|the\s+smallest|the\s+highest|the\s+lowest|the\s+best|the\s+worst)\b/i.test(userQuestion);
       
