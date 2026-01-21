@@ -13825,6 +13825,28 @@ If a hint conflicts with your understanding, trust the hint - they are reliable.
       }
 
       // ═══════════════════════════════════════════════════════════════
+      // SMALLEST/LARGEST N PROJECTS DETECTION (ALL QUERIES)
+      // When user asks "smallest 3 projects" or "largest 5 projects"
+      // route to get_smallest_projects / get_largest_projects
+      // ═══════════════════════════════════════════════════════════════
+      const smallestLargestPattern = /\b(smallest|lowest|cheapest|least\s+expensive|bottom)\s+(\d+)\s+(project|projects|active|open|submitted|won|records?)/i;
+      const topLargestPattern = /\b(largest|biggest|highest|most\s+expensive|top)\s+(\d+)\s+(project|projects|active|open|submitted|won|records?)/i;
+      const smallestMatch = smallestLargestPattern.exec(userQuestion);
+      const topLargestMatch = topLargestPattern.exec(userQuestion);
+      
+      if (smallestMatch && classification.function_name !== "get_smallest_projects") {
+        const extractedLimit = parseInt(smallestMatch[2], 10);
+        console.log(`[QueryEngine] 🔢 SMALLEST N DETECTION: "${userQuestion}" → get_smallest_projects with limit=${extractedLimit}`);
+        classification.function_name = "get_smallest_projects";
+        classification.arguments.limit = extractedLimit;
+      } else if (topLargestMatch && classification.function_name !== "get_largest_projects") {
+        const extractedLimit = parseInt(topLargestMatch[2], 10);
+        console.log(`[QueryEngine] 🔢 LARGEST N DETECTION: "${userQuestion}" → get_largest_projects with limit=${extractedLimit}`);
+        classification.function_name = "get_largest_projects";
+        classification.arguments.limit = extractedLimit;
+      }
+
+      // ═══════════════════════════════════════════════════════════════
       // BOTTOM X / TOP X FOLLOW-UP CORRECTION
       // When user asks "bottom 3" or "top 5" as a follow-up, they want:
       // - Same query type as previous
