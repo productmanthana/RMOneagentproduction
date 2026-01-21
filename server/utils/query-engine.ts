@@ -19060,7 +19060,7 @@ Response (JSON only):`;
     // Explicit limit patterns: "top 10", "first 5", "last 3", "bottom 5", "only 1", "single", "one project"
     // Also ordinals: "second largest", "third best", "5th biggest"
     if (args.limit) {
-      const hasExplicitNumericLimit = /\b(top|first|last|bottom|only|just)\s+\d+\b/i.test(userQuestion);
+      const hasExplicitNumericLimit = /\b(top|first|last|bottom|only|just|smallest|largest|biggest|lowest|highest|cheapest)\s+\d+\b/i.test(userQuestion);
       const hasOrdinalRequest = /\b(second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|\d+(st|nd|rd|th))\s+(largest|biggest|smallest|best|worst|highest|lowest)/i.test(userQuestion);
       const hasSingleRequest = /\b(single|one\s+project|1\s+project|the\s+largest|the\s+biggest|the\s+smallest|the\s+highest|the\s+lowest|the\s+best|the\s+worst)\b/i.test(userQuestion);
       
