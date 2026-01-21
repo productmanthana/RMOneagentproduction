@@ -13834,12 +13834,12 @@ If a hint conflicts with your understanding, trust the hint - they are reliable.
       const smallestMatch = smallestLargestPattern.exec(userQuestion);
       const topLargestMatch = topLargestPattern.exec(userQuestion);
       
-      if (smallestMatch && classification.function_name !== "get_smallest_projects") {
+      if (smallestMatch) {
         const extractedLimit = parseInt(smallestMatch[2], 10);
         console.log(`[QueryEngine] 🔢 SMALLEST N DETECTION: "${userQuestion}" → get_smallest_projects with limit=${extractedLimit}`);
         classification.function_name = "get_smallest_projects";
         classification.arguments.limit = extractedLimit;
-      } else if (topLargestMatch && classification.function_name !== "get_largest_projects") {
+      } else if (topLargestMatch) {
         const extractedLimit = parseInt(topLargestMatch[2], 10);
         console.log(`[QueryEngine] 🔢 LARGEST N DETECTION: "${userQuestion}" → get_largest_projects with limit=${extractedLimit}`);
         classification.function_name = "get_largest_projects";
