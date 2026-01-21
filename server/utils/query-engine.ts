@@ -1033,8 +1033,8 @@ function detectBreakdownPattern(userQuestion: string): { breakdownColumn: string
     'project types': 'get_project_type_breakdown',
     'client': 'get_top_clients',
     'clients': 'get_top_clients',
-    'company': 'get_top_companies',
-    'companies': 'get_top_companies',
+    'company': 'compare_companies',
+    'companies': 'compare_companies',
     'poc': 'get_top_pocs',
     'pocs': 'get_top_pocs',
     'sales rep': 'get_top_pocs',
@@ -17095,7 +17095,7 @@ Response (JSON only):`;
         'get_revenue_by_division', 'get_revenue_by_department',
         'compare_divisions', 'compare_departments', 'get_category_breakdown',
         'get_project_type_breakdown', 'get_status_breakdown', 'get_top_clients',
-        'get_top_companies', 'get_top_pocs', 'get_size_distribution',
+        'compare_companies', 'get_top_pocs', 'get_size_distribution',
         'compare_years', 'get_revenue_by_month', 'get_revenue_by_state',
         'compare_states', 'compare_regions'
       ];
