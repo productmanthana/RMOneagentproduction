@@ -13,6 +13,8 @@ import { unifiedStorage as chatStorage } from "./unified-storage";
 import { mssqlStorage } from "./mssql-storage";
 import { setupAuth, isAuthenticated, getUserId, getUserEmail } from "./simpleAuth";
 import * as XLSX from "xlsx";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 let queryEngine: QueryEngine | null = null;
 let ragStore: RAGVectorStore | null = null;
@@ -264,6 +266,111 @@ Sample Data (first 3 rows): ${JSON.stringify(response.data.slice(0, 3), null, 2)
     }
   });
 
+  // ═══════════════════════════════════════════════════════════════
+  // JWT AUTHENTICATION ENDPOINT
+  // ═══════════════════════════════════════════════════════════════
+
+
+  const jwt_login = async (req, res) => {
+    try {
+      const token = req.body?.token ?? req.query?.token;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: "Token is required"
+        });
+      }
+
+      // Verify token signature and expiration
+      const secret = process.env.JWT_SECRET || "dev-jwt-secret-change-in-prod";
+
+      if (!process.env.JWT_SECRET) {
+        console.warn("[JWT Login] Using default development secret. Set JWT_SECRET in production.");
+      }
+
+      let decoded: any;
+      try {
+        decoded = jwt.verify(token, secret);
+      } catch (err) {
+        console.error("[JWT Login] Token verification failed:", err);
+        return res.status(401).json({
+          success: false,
+          message: "Invalid or expired token",
+          error: String(err)
+        });
+      }
+
+      // Map claims from Microsoft/SAML format or standard JWT
+      const username = decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] || decoded.username || decoded.sub;
+      const roleClaim = decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || decoded.role;
+      const name = decoded.name;
+
+      // Basic validation
+      if (!username) {
+        return res.status(400).json({
+          success: false,
+          message: "Token missing username/identity claim"
+        });
+      }
+
+      const email = username.toLowerCase();
+      
+      let user = await mssqlStorage.getUserByEmail(email);
+
+      if (!user) {
+        console.log(`[JWT Login] User ${email} not found, creating new user...`);
+        // Create new user
+        const randomPassword = nanoid(16);
+        const passwordHash = await bcrypt.hash(randomPassword, 10);
+
+        // Determine partial name from username if name claim is missing
+        const namePart = email.split('@')[0];
+        const finalName = name || namePart;
+        const mappedRole = roleClaim === "Super Admin" ? "superadmin" : "user";
+
+        user = await mssqlStorage.createUser({
+          email: email,
+          passwordHash: passwordHash,
+          firstName: finalName,
+          lastName: "", // No last name in example payload, could try to parse from name
+          role: mappedRole,
+        });
+      }
+
+      // Log the user in (Create Session)
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error("[JWT Login] Session regeneration error:", err);
+          return res.status(500).json({ success: false, message: "Login failed" });
+        }
+
+        // Set user ID and email on new session
+        req.session.userId = user!.id;
+        req.session.userEmail = user!.email;
+
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("[JWT Login] Session save error:", saveErr);
+            return res.status(500).json({ success: false, message: "Login failed" });
+          }
+
+          console.log(`[JWT Login] Successfully logged in user: ${user!.email}`);
+          return res.redirect("/");
+        });
+      });
+
+    } catch (error) {
+      console.error("[JWT Login] Unexpected error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error during login",
+        error: String(error)
+      });
+    }
+  }
+  app.post("/api/auth/jwt-login", jwt_login)
+  app.get("/api/auth/jwt-login", jwt_login)
   // ═══════════════════════════════════════════════════════════════
   // CHAT MANAGEMENT ENDPOINTS (Protected by authentication)
   // ═══════════════════════════════════════════════════════════════
